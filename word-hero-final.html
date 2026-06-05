@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词小英雄 · Word Hero</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-bottom: 70px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            min-height: 100vh;
+        }
+        .screen { display: none; padding: 20px; min-height: calc(100vh - 70px); animation: fadeIn 0.3s ease-in; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes starFloat {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(0.5); opacity: 0; }
+        }
+        @keyframes animalGrow {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        #homeScreen { background: linear-gradient(180deg, #fff5e6 0%, #ffffff 100%); }
+        .pet-section { text-align: center; margin: 30px 0; }
+        .pet-emoji {
+            font-size: 80px;
+            margin: 20px 0;
+            animation: bounce 2s infinite;
+        }
+        .pet-name { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 10px; }
+        .growth-bar {
+            background: #e0e0e0;
+            height: 12px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .growth-fill {
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d);
+            height: 100%;
+            width: 45%;
+            transition: width 0.5s ease;
+        }
+        .stats-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-number { font-size: 28px; font-weight: bold; }
+        .stat-label { font-size: 12px; opacity: 0.9; margin-top: 5px; }
+        .task-section {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .task-title { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 10px; }
+        .task-item { margin: 8px 0; font-size: 14px; color: #555; }
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-primary:hover { transform: scale(1.02); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
+        .alert-box {
+            background: #ffe8e8;
+            border-left: 4px solid #ff6b6b;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #c92a2a;
+        }
+
+        #libraryScreen { background: #ffffff; }
+        .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .btn-secondary {
+            padding: 10px;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover { background: #e0e0e0; border-color: #667eea; }
+        .word-list { max-height: calc(100vh - 250px); overflow-y: auto; }
+        .word-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.2s;
+        }
+        .word-card:hover { border-color: #667eea; box-shadow: 0 3px 12px rgba(102, 126, 234, 0.15); }
+        .word-emoji { font-size: 40px; }
+        .word-content { flex: 1; }
+        .word-main { font-weight: bold; font-size: 18px; color: #333; }
+        .word-sub { font-size: 13px; color: #999; margin-top: 4px; }
+        .mastery-bar { display: flex; gap: 3px; margin-top: 6px; }
+        .dot { width: 6px; height: 6px; border-radius: 50%; background: #ddd; }
+        .dot.filled { background: #667eea; }
+        .word-actions { display: flex; gap: 8px; }
+        .btn-small {
+            padding: 6px 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-small:hover { background: #f0f0f0; border-color: #667eea; }
+
+        #practiceScreen { background: linear-gradient(180deg, #fff5e6 0%, #ffffff 100%); }
+        .progress-bar {
+            background: #e0e0e0;
+            height: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #4caf50, #45a049);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text { text-align: center; font-size: 12px; color: #999; margin-top: 8px; }
+        .question-container {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .question-type { font-size: 12px; color: #999; margin-bottom: 15px; }
+        .question-content { margin: 20px 0; }
+        .question-emoji { font-size: 50px; margin: 10px 0; }
+        .question-text { font-size: 24px; font-weight: bold; color: #333; margin: 15px 0; }
+        .question-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            margin: 15px 0;
+            box-sizing: border-box;
+        }
+        .question-input:focus { outline: none; border-color: #667eea; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .option-btn {
+            padding: 15px;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-btn:hover { border-color: #667eea; background: #f5f5f5; }
+        .option-btn.selected { background: #667eea; color: white; border-color: #667eea; }
+        .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .btn-confirm {
+            padding: 12px;
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-confirm:hover { transform: scale(1.02); box-shadow: 0 3px 12px rgba(76, 175, 80, 0.3); }
+        .btn-sound {
+            padding: 12px;
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-sound:hover { transform: scale(1.02); box-shadow: 0 3px 12px rgba(33, 150, 243, 0.3); }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            animation: slideDown 0.3s ease;
+        }
+        .feedback.correct { background: #c8e6c9; color: #2e7d32; }
+        .feedback.incorrect { background: #ffcccc; color: #c62828; }
+        .star-float {
+            position: fixed;
+            font-size: 30px;
+            animation: starFloat 1s ease-out forwards;
+            pointer-events: none;
+        }
+
+        #achievementScreen { background: linear-gradient(180deg, #fff9e6 0%, #ffffff 100%); }
+        .evolution-line {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 12px;
+        }
+        .evolution-stage { font-size: 40px; opacity: 0.5; transition: all 0.5s; }
+        .evolution-stage.current { font-size: 60px; opacity: 1; animation: animalGrow 0.6s ease; }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin: 25px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        .mistake-card {
+            background: linear-gradient(135deg, #ffe8e8 0%, #fff5f5 100%);
+            border-left: 4px solid #ff6b6b;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .mistake-word { font-weight: bold; color: #333; }
+        .mistake-count { background: #ff6b6b; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin: 15px 0;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 20px;
+            background: #f0f0f0;
+        }
+        .calendar-day.checked { background: #4caf50; }
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .badge {
+            background: linear-gradient(135deg, #ffd93d 0%, #ffb347 100%);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            opacity: 0.5;
+        }
+        .badge.unlocked {
+            opacity: 1;
+            animation: pulse 1s ease-in-out;
+        }
+        .badge:hover { transform: scale(1.05); }
+        .badge-emoji { font-size: 40px; margin-bottom: 8px; }
+        .badge-name { font-size: 12px; font-weight: bold; color: #333; }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-top: 2px solid #e0e0e0;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            padding: 10px 0;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
+            z-index: 999;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 10px;
+            color: #999;
+            transition: all 0.2s;
+        }
+        .nav-item.active { color: #667eea; font-weight: bold; }
+        .nav-icon { font-size: 24px; margin-bottom: 4px; }
+        .nav-label { font-size: 11px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 首页 -->
+        <div id="homeScreen" class="screen active">
+            <div class="pet-section">
+                <div class="pet-name" id="petTitle">🐣 你的小英雄宠物</div>
+                <div class="pet-emoji" id="petEmoji">🥚</div>
+                <div class="growth-bar"><div class="growth-fill" id="growthFill"></div></div>
+                <div style="font-size: 12px; color: #999;">成长进度：<span id="totalStars">0</span>/450 ⭐</div>
+            </div>
+
+            <div class="stats-box">
+                <div class="stat-card">
+                    <div class="stat-number">🔥</div>
+                    <div class="stat-label">连续打卡</div>
+                    <div class="stat-number" style="font-size: 20px;" id="streakDays">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">⭐</div>
+                    <div class="stat-label">已掌握单词</div>
+                    <div class="stat-number" style="font-size: 20px;" id="masteredCount">0</div>
+                </div>
+            </div>
+
+            <div class="task-section">
+                <div class="task-title">📅 今日任务</div>
+                <div class="task-item" id="newWordsCount">🆕 新词：0 个</div>
+                <div class="task-item" id="reviewWordsCount">🔁 复习：0 个</div>
+                <button class="btn-primary" onclick="startPractice()">开始学习 →</button>
+            </div>
+
+            <div class="alert-box" id="mistakeAlert" style="display: none;">
+                ⚠️ <strong>易错词提醒：</strong><br>
+                <span id="mistakeWord"></span>
+            </div>
+        </div>
+
+        <!-- 词库 -->
+        <div id="libraryScreen" class="screen">
+
+
+
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" id="searchInput" placeholder="搜索单词..." style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                <button class="btn-secondary" onclick="performSearch()" style="padding: 10px 15px;">🔍</button>
+            </div>
+            <div class="toolbar">
+
+
+                <button class="btn-secondary" onclick="openAddWordModal()">+ 添加单词</button>
+                <button class="btn-secondary" onclick="handleImport()">📥 导入</button>
+                <button class="btn-secondary" onclick="handleExport()">📤 导出</button>
+                <button class="btn-secondary" onclick="clearSearch()">清空搜索</button>
+            </div>
+            <div class="word-list" id="wordListContainer"></div>
+        </div>
+
+        <!-- 练习 -->
+        <div id="practiceScreen" class="screen">
+            <div style="margin-bottom: 20px;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">今日进度：0/0</div>
+            </div>
+            <div id="practiceContainer"></div>
+            <div id="feedbackContainer"></div>
+        </div>
+
+        <!-- 成就 -->
+        <div id="achievementScreen" class="screen">
+            <div class="section-title">🐣 动物进化阶段</div>
+            <div class="evolution-line" id="evolutionLine">
+                <div class="evolution-stage">🥚</div>
+                <div style="color: #ddd;">→</div>
+                <div class="evolution-stage">🐣</div>
+                <div style="color: #ddd;">→</div>
+                <div class="evolution-stage">🐰</div>
+                <div style="color: #ddd;">→</div>
+                <div class="evolution-stage">🦊</div>
+                <div style="color: #ddd;">→</div>
+                <div class="evolution-stage">🦁</div>
+                <div style="color: #ddd;">→</div>
+                <div class="evolution-stage">🐉</div>
+            </div>
+
+            <div class="section-title">📊 易错单词 TOP 5</div>
+            <div id="mistakeList"></div>
+
+            <div class="section-title">📅 打卡日历（本月）</div>
+            <div class="calendar" id="calendar"></div>
+
+            <div class="section-title">🏅 成就徽章</div>
+            <div class="badges-grid" id="badgesContainer"></div>
+        </div>
+    </div>
+
+    <!-- 导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchScreen('home')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-label">首页</div>
+        </div>
+        <div class="nav-item" onclick="switchScreen('library')">
+            <div class="nav-icon">📚</div>
+            <div class="nav-label">词库</div>
+        </div>
+        <div class="nav-item" onclick="switchScreen('practice')">
+            <div class="nav-icon">✏️</div>
+            <div class="nav-label">练习</div>
+        </div>
+        <div class="nav-item" onclick="switchScreen('achievement')">
+            <div class="nav-icon">🏆</div>
+            <div class="nav-label">成就</div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'wordHeroData';
+        const DEFAULT_WORDS = [
+            { id: 1, english: 'bike', chinese: '自行车', emoji: '🚲', phonetic: '/baɪk/', ebbingStage: 0, nextReviewDate: new Date().toISOString().split('T')[0], correctCount: 0, errorCount: 3, mastered: false },
+            { id: 2, english: 'dog', chinese: '狗', emoji: '🐶', phonetic: '/dɔːɡ/', ebbingStage: 1, nextReviewDate: new Date(Date.now() + 3*24*60*60*1000).toISOString().split('T')[0], correctCount: 2, errorCount: 1, mastered: false },
+            { id: 3, english: 'book', chinese: '书', emoji: '📕', phonetic: '/bʊk/', ebbingStage: 2, nextReviewDate: new Date(Date.now() + 1*24*60*60*1000).toISOString().split('T')[0], correctCount: 5, errorCount: 0, mastered: false },
+            { id: 4, english: 'cat', chinese: '猫', emoji: '🐱', phonetic: '/kæt/', ebbingStage: 0, nextReviewDate: new Date().toISOString().split('T')[0], correctCount: 1, errorCount: 2, mastered: false },
+            { id: 5, english: 'apple', chinese: '苹果', emoji: '🍎', phonetic: '/ˈæpəl/', ebbingStage: 0, nextReviewDate: new Date().toISOString().split('T')[0], correctCount: 0, errorCount: 0, mastered: false }
+        ];
+
+        function initializeData() {
+            if (!localStorage.getItem(STORAGE_KEY)) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    words: DEFAULT_WORDS,
+                    userProfile: {
+                        streak: 0,
+                        lastStudyDate: null,
+                        totalStars: 0,
+                        animalLevel: 0,
+                        wordsMastered: 0,
+                        checkinDates: [],
+                        badges: ['初次学习']
+                    }
+                }));
+            }
+        }
+
+        function getAllData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : null;
+        }
+
+        function saveAllData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        function getAllWords() {
+            const data = getAllData();
+            return data ? data.words : [];
+        }
+
+        function updateHomeDisplay() {
+            const data = getAllData();
+            const profile = data.userProfile;
+            document.getElementById('totalStars').textContent = profile.totalStars;
+            document.getElementById('streakDays').textContent = profile.streak;
+            document.getElementById('masteredCount').textContent = profile.wordsMastered;
+
+            // 更新宠物
+            const levels = ['🥚', '🐣', '🐰', '🦊', '🦁', '🐉'];
+            const animalNames = ['蛋宝宝', '小鸡', '小兔子', '小狐狸', '小狮子', '小龙'];
+            const currentLevel = Math.min(Math.floor(profile.totalStars / 75), 5);
+            document.getElementById('petEmoji').textContent = levels[currentLevel];
+            document.getElementById('petTitle').textContent = `🐣 你的${animalNames[currentLevel]}`;
+            document.getElementById('growthFill').style.width = ((profile.totalStars % 75) / 75 * 100) + '%';
+
+            // 更新任务
+            const tasks = getTodayTasks();
+            document.getElementById('newWordsCount').textContent = `🆕 新词：${tasks.newWords.length} 个`;
+            document.getElementById('reviewWordsCount').textContent = `🔁 复习：${tasks.reviewWords.length} 个`;
+
+            // 更新易错词提醒
+            const mistakes = data.words.filter(w => w.errorCount > 0).sort((a, b) => b.errorCount - a.errorCount);
+            if (mistakes.length > 0) {
+                document.getElementById('mistakeAlert').style.display = 'block';
+                document.getElementById('mistakeWord').textContent = `"${mistakes[0].english}" 错了 ${mistakes[0].errorCount} 次 😢 需要加强复习！`;
+            }
+        }
+
+        function renderWordList() {
+            const words = getAllWords();
+            const html = words.map(w => `
+                <div class="word-card">
+                    <div class="word-emoji">${w.emoji}</div>
+                    <div class="word-content">
+                        <div class="word-main">${w.english}</div>
+                        <div class="word-sub">${w.chinese} | ${w.phonetic}</div>
+                        <div class="mastery-bar">
+                            ${[1,2,3,4].map(i => `<div class="dot ${i <= w.ebbingStage ? 'filled' : ''}"></div>`).join('')}
+                        </div>
+                        <div style="font-size: 11px; color: #999; margin-top: 4px;">✓ ${w.correctCount} | ✕ ${w.errorCount} | 下次：${w.nextReviewDate}</div>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('wordListContainer').innerHTML = html || '<div style="text-align: center; padding: 30px; color: #999;">暂无单词</div>';
+        }
+
+        function renderAchievements() {
+            const data = getAllData();
+            const profile = data.userProfile;
+            const words = data.words;
+
+            // 动物进化线
+            const stages = document.querySelectorAll('.evolution-stage');
+            stages.forEach((stage, i) => {
+                if (i === profile.animalLevel) stage.classList.add('current');
+                else stage.classList.remove('current');
+            });
+
+            // 易错词
+            const mistakes = words.filter(w => w.errorCount > 0).sort((a, b) => b.errorCount - a.errorCount).slice(0, 5);
+            document.getElementById('mistakeList').innerHTML = mistakes.map(w => `
+                <div class="mistake-card">
+                    <span class="mistake-word">${w.emoji} ${w.english}</span>
+                    <span class="mistake-count">❌ ${'❌'.repeat(Math.min(w.errorCount, 5))}</span>
+                </div>
+            `).join('');
+
+            // 打卡日历
+            const today = new Date();
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+            let calendar = '';
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                const checked = profile.checkinDates.includes(dateStr);
+                calendar += `<div class="calendar-day ${checked ? 'checked' : ''}">✓</div>`;
+            }
+            document.getElementById('calendar').innerHTML = calendar;
+
+            // 成就徽章
+            const allBadges = [
+                { name: '初次学习', emoji: '🌱', condition: () => profile.totalStars > 0 },
+                { name: '连续3天', emoji: '🔥', condition: () => profile.streak >= 3 },
+                { name: '连续7天', emoji: '🔥', condition: () => profile.streak >= 7 },
+                { name: '连续21天', emoji: '🔥', condition: () => profile.streak >= 21 },
+                { name: '掌握10词', emoji: '📘', condition: () => profile.wordsMastered >= 10 },
+                { name: '掌握30词', emoji: '📘', condition: () => profile.wordsMastered >= 30 },
+                { name: '掌握60词', emoji: '📘', condition: () => profile.wordsMastered >= 60 },
+                { name: '全对一天', emoji: '🎯', condition: () => profile.badges.includes('全对一天') },
+                { name: '纠错达人', emoji: '🛡️', condition: () => profile.badges.includes('纠错达人') }
+            ];
+
+            const badges = allBadges.map((badge, idx) => {
+                const unlocked = badge.condition();
+                return `
+                    <div class="badge ${unlocked ? 'unlocked' : ''}" title="${badge.name}">
+                        <div class="badge-emoji" style="opacity: ${unlocked ? 1 : 0.3}">${badge.emoji}</div>
+                        <div class="badge-name">${badge.name}</div>
+                    </div>
+                `;
+            });
+            document.getElementById('badgesContainer').innerHTML = badges.join('');
+        }
+
+        let todayQuestions = [];
+        let currentQuestionIndex = 0;
+        let correctCount = 0;
+        let allCorrect = true;
+
+        function getTodayTasks() {
+            const today = new Date().toISOString().split('T')[0];
+            const words = getAllWords();
+            const newWords = words.filter(w => w.ebbingStage === 0).slice(0, 2);
+            const reviewWords = words.filter(w => w.nextReviewDate === today && w.ebbingStage < 6).slice(0, 5);
+            return { newWords, reviewWords };
+        }
+
+        function generateQuestion(word) {
+            const types = ['A', 'B', 'C', 'D', 'E'];
+            const randomType = types[Math.floor(Math.random() * types.length)];
+            const question = { wordId: word.id, english: word.english, chinese: word.chinese, emoji: word.emoji, type: randomType };
+
+            switch(randomType) {
+                case 'A': question.display = '【题型 A】看中文拼英文'; question.prompt = `${word.emoji} ${word.chinese}`; break;
+                case 'B':
+                    const allWords = getAllWords();
+                    const wrongOptions = allWords.filter(w => w.id !== word.id).sort(() => Math.random() - 0.5).slice(0, 3).map(w => w.chinese);
+                    question.options = [word.chinese, ...wrongOptions].sort(() => Math.random() - 0.5);
+                    question.display = '【题型 B】看英文选中文';
+                    question.prompt = word.english;
+                    break;
+                case 'C': question.display = '【题型 C】听发音拼单词'; question.prompt = word.emoji; break;
+                case 'D':
+                    const letters = word.english.split('').sort(() => Math.random() - 0.5);
+                    question.display = '【题型 D】字母排序';
+                    question.prompt = letters.join(' ');
+                    break;
+                case 'E':
+                    const idx = Math.floor(Math.random() * word.english.length);
+                    const blank = word.english.split('').map((c, i) => i === idx ? '_' : c).join('');
+                    question.display = '【题型 E】字母填空';
+                    question.prompt = blank;
+                    question.missingLetter = word.english[idx];
+                    break;
+            }
+            return question;
+        }
+
+        function startPractice() {
+            const tasks = getTodayTasks();
+            if (tasks.newWords.length + tasks.reviewWords.length === 0) {
+                alert('今日任务已完成！明天继续加油！');
+                return;
+            }
+            todayQuestions = [];
+            tasks.newWords.forEach(w => todayQuestions.push(generateQuestion(w)));
+            tasks.reviewWords.forEach(w => todayQuestions.push(generateQuestion(w)));
+            todayQuestions = todayQuestions.sort(() => Math.random() - 0.5);
+            currentQuestionIndex = 0;
+            correctCount = 0;
+            allCorrect = true;
+            switchScreen('practice');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            if (currentQuestionIndex >= todayQuestions.length) {
+                showSummary();
+                return;
+            }
+            const q = todayQuestions[currentQuestionIndex];
+            const progress = Math.round((currentQuestionIndex / todayQuestions.length) * 100);
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressText').textContent = `今日进度：${currentQuestionIndex}/${todayQuestions.length}`;
+
+            let html = `<div class="question-container">
+                <div class="question-type">${q.display}</div>
+                <div class="question-content">
+                    <div style="font-size: 48px; margin: 20px 0;">${q.emoji || '❓'}</div>
+                    <div class="question-text">${q.prompt}</div>
+                </div>`;
+
+            if (['A', 'C', 'D', 'E'].includes(q.type)) {
+                html += `<input type="text" id="userInput" class="question-input" placeholder="输入答案..." autocomplete="off">
+                         <div class="button-group">
+                            <button class="btn-confirm" onclick="checkAnswer()">✓ 确认</button>
+                            <button class="btn-sound" onclick="speakWord('${q.english}')">🔊 听发音</button>
+                         </div>`;
+            } else {
+                html += `<div class="options-grid">`;
+                q.options.forEach((opt, i) => {
+                    html += `<button class="option-btn" onclick="selectOption(${i}, this)">${opt}</button>`;
+                });
+                html += `</div><div class="button-group">
+                            <button class="btn-confirm" onclick="checkAnswer()">✓ 确认</button>
+                            <button class="btn-sound" onclick="speakWord('${q.english}')">🔊 听发音</button>
+                         </div>`;
+            }
+            html += `</div>`;
+            document.getElementById('practiceContainer').innerHTML = html;
+            document.getElementById('feedbackContainer').innerHTML = '';
+            setTimeout(() => { const input = document.getElementById('userInput'); if (input) input.focus(); }, 100);
+        }
+
+        function selectOption(idx, el) {
+            document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+            el.classList.add('selected');
+            todayQuestions[currentQuestionIndex].userAnswer = idx;
+        }
+
+        function checkAnswer() {
+            const q = todayQuestions[currentQuestionIndex];
+            let isCorrect = false;
+
+            if (['A', 'C', 'D'].includes(q.type)) {
+                isCorrect = document.getElementById('userInput').value.trim().toLowerCase() === q.english.toLowerCase();
+            } else if (q.type === 'E') {
+                isCorrect = document.getElementById('userInput').value.trim().toLowerCase() === q.missingLetter.toLowerCase();
+            } else if (q.type === 'B') {
+                isCorrect = q.options[q.userAnswer] === q.chinese;
+            }
+
+            showFeedback(isCorrect, q);
+        }
+
+        function showFeedback(isCorrect, q) {
+            if (isCorrect) {
+                correctCount++;
+                updateWordRecord(q.wordId, true);
+                document.getElementById('feedbackContainer').innerHTML = `<div class="feedback correct">🎉 太棒了！答对了！+1 ⭐</div>`;
+                createStarAnimation();
+            } else {
+                allCorrect = false;
+                updateWordRecord(q.wordId, false);
+                document.getElementById('feedbackContainer').innerHTML = `<div class="feedback incorrect">😊 不对呢！正确答案是：<strong>${q.english}</strong></div>`;
+            }
+            document.getElementById('practiceContainer').style.opacity = '0.6';
+            document.getElementById('practiceContainer').style.pointerEvents = 'none';
+            setTimeout(() => {
+                currentQuestionIndex++;
+                document.getElementById('practiceContainer').style.opacity = '1';
+                document.getElementById('practiceContainer').style.pointerEvents = 'auto';
+                renderQuestion();
+            }, 2000);
+        }
+
+        function createStarAnimation() {
+            const star = document.createElement('div');
+            star.textContent = '⭐';
+            star.className = 'star-float';
+            star.style.left = Math.random() * window.innerWidth + 'px';
+            star.style.top = window.innerHeight / 2 + 'px';
+            document.body.appendChild(star);
+            setTimeout(() => star.remove(), 1000);
+        }
+
+        function updateWordRecord(wordId, isCorrect) {
+            const data = getAllData();
+            const word = data.words.find(w => w.id === wordId);
+            if (!word) return;
+
+            if (isCorrect) {
+                word.correctCount++;
+                if (word.ebbingStage < 6) word.ebbingStage++;
+                const intervals = [0, 1, 2, 4, 7, 15, 30];
+                word.nextReviewDate = new Date(Date.now() + intervals[word.ebbingStage] * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                if (word.ebbingStage === 6) { word.mastered = true; data.userProfile.wordsMastered++; }
+            } else {
+                word.errorCount++;
+                word.ebbingStage = 0;
+                word.nextReviewDate = new Date().toISOString().split('T')[0];
+            }
+            saveAllData(data);
+        }
+
+        function showSummary() {
+            const total = todayQuestions.length;
+            const accuracy = Math.round((correctCount / total) * 100);
+            const stars = '⭐'.repeat(Math.ceil((correctCount / total) * 5)) + '☆'.repeat(5 - Math.ceil((correctCount / total) * 5));
+
+            const data = getAllData();
+            const today = new Date().toISOString().split('T')[0];
+            const lastStudy = data.userProfile.lastStudyDate;
+
+            // 更新连续打卡
+            if (lastStudy !== today) {
+                if (!lastStudy || new Date(lastStudy).getTime() === new Date(today).getTime() - 24*60*60*1000) {
+                    data.userProfile.streak++;
+                } else {
+                    data.userProfile.streak = 1;
+                }
+                data.userProfile.lastStudyDate = today;
+                data.userProfile.checkinDates.push(today);
+            }
+
+            data.userProfile.totalStars += correctCount;
+            data.userProfile.animalLevel = Math.min(Math.floor(data.userProfile.totalStars / 75), 5);
+
+            // 解锁成就
+            if (accuracy === 100 && !data.userProfile.badges.includes('全对一天')) {
+                data.userProfile.badges.push('全对一天');
+            }
+            if (correctCount > data.words.length / 2 && !data.userProfile.badges.includes('纠错达人')) {
+                data.userProfile.badges.push('纠错达人');
+            }
+
+            saveAllData(data);
+
+            document.getElementById('practiceContainer').innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <div style="font-size: 60px; margin-bottom: 20px; animation: bounce 0.6s ease;">🎉</div>
+                    <div style="font-size: 18px; font-weight: bold; margin-bottom: 15px;">今日学习完成！</div>
+                    <div style="background: #f0f7ff; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                        <div style="font-size: 14px; color: #666; margin-bottom: 8px;">答对: ${correctCount} / ${total}</div>
+                        <div style="font-size: 14px; color: #666; margin-bottom: 12px;">正确率: ${accuracy}%</div>
+                        <div style="font-size: 16px; color: #ff9800;">${stars}</div>
+                        <div style="font-size: 12px; color: #999; margin-top: 8px;">获得 ${correctCount} 颗星星</div>
+                    </div>
+                    <button class="btn-primary" onclick="switchScreen('home')">返回首页 🏠</button>
+                </div>
+            `;
+            document.getElementById('feedbackContainer').innerHTML = '';
+        }
+
+        function speakWord(word) {
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8;
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        // ==================== 词库功能实现 ====================
+        
+        function openAddWordModal() {
+            const modal = document.createElement('div');
+            modal.id = 'wordModal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; border-radius: 12px; padding: 20px; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                    <h2 style="margin-bottom: 15px; color: #333; font-size: 18px;">添加新单词</h2>
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">英文：</label>
+                        <input type="text" id="modalEnglish" placeholder="bike" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">中文：</label>
+                        <input type="text" id="modalChinese" placeholder="自行车" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">Emoji：</label>
+                        <input type="text" id="modalEmoji" placeholder="🚲" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">音标（可选）：</label>
+                        <input type="text" id="modalPhonetic" placeholder="/baɪk/" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+                        <button onclick="closeModal()" style="padding: 10px; background: #e0e0e0; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">取消</button>
+                        <button onclick="saveNewWord()" style="padding: 10px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">保存</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            document.getElementById('modalEnglish').focus();
+        }
+
+        function openEditModal(wordId) {
+            const word = getAllWords().find(w => w.id === wordId);
+            if (!word) return;
+
+            const modal = document.createElement('div');
+            modal.id = 'wordModal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; border-radius: 12px; padding: 20px; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                    <h2 style="margin-bottom: 15px; color: #333; font-size: 18px;">编辑单词</h2>
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">英文：</label>
+                        <input type="text" id="modalEnglish" value="${word.english}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">中文：</label>
+                        <input type="text" id="modalChinese" value="${word.chinese}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">Emoji：</label>
+                        <input type="text" id="modalEmoji" value="${word.emoji}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">音标（可选）：</label>
+                        <input type="text" id="modalPhonetic" value="${word.phonetic}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+                        <button onclick="closeModal()" style="padding: 10px; background: #e0e0e0; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">取消</button>
+                        <button onclick="updateWord(${wordId})" style="padding: 10px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">保存</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('wordModal');
+            if (modal) modal.remove();
+        }
+
+        function saveNewWord() {
+            const english = document.getElementById('modalEnglish').value.trim();
+            const chinese = document.getElementById('modalChinese').value.trim();
+            const emoji = document.getElementById('modalEmoji').value.trim() || '📝';
+            const phonetic = document.getElementById('modalPhonetic').value.trim() || '';
+
+            if (!english || !chinese) {
+                alert('请填写英文和中文！');
+                return;
+            }
+
+            const data = getAllData();
+            const maxId = data.words.length > 0 ? Math.max(...data.words.map(w => w.id)) : 0;
+            
+            data.words.push({
+                id: maxId + 1,
+                english,
+                chinese,
+                emoji,
+                phonetic,
+                ebbingStage: 0,
+                nextReviewDate: new Date().toISOString().split('T')[0],
+                correctCount: 0,
+                errorCount: 0,
+                mastered: false
+            });
+            
+            saveAllData(data);
+            closeModal();
+            renderWordList();
+            showNotification('单词添加成功！✓');
+        }
+
+        function updateWord(wordId) {
+            const english = document.getElementById('modalEnglish').value.trim();
+            const chinese = document.getElementById('modalChinese').value.trim();
+            const emoji = document.getElementById('modalEmoji').value.trim() || '📝';
+            const phonetic = document.getElementById('modalPhonetic').value.trim() || '';
+
+            if (!english || !chinese) {
+                alert('请填写英文和中文！');
+                return;
+            }
+
+            const data = getAllData();
+            const word = data.words.find(w => w.id === wordId);
+            if (word) {
+                word.english = english;
+                word.chinese = chinese;
+                word.emoji = emoji;
+                word.phonetic = phonetic;
+                saveAllData(data);
+                closeModal();
+                renderWordList();
+                showNotification('单词更新成功！✓');
+            }
+        }
+
+        function confirmDelete(wordId) {
+            if (confirm('确定要删除这个单词吗？')) {
+                const data = getAllData();
+                data.words = data.words.filter(w => w.id !== wordId);
+                saveAllData(data);
+                renderWordList();
+                showNotification('单词已删除！');
+            }
+        }
+
+        function performSearch() {
+            const keyword = document.getElementById('searchInput').value.trim();
+            if (!keyword) {
+                renderWordList();
+                return;
+            }
+            
+            const words = getAllWords();
+            const lowerKeyword = keyword.toLowerCase();
+            const results = words.filter(w => 
+                w.english.toLowerCase().includes(lowerKeyword) ||
+                w.chinese.includes(keyword)
+            );
+            
+            renderWordList(results);
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            renderWordList();
+        }
+
+        function handleExport() {
+            const data = getAllData();
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `word-hero-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showNotification('数据已导出！📥');
+        }
+
+        function handleImport() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const data = JSON.parse(event.target.result);
+                            if (data.words && Array.isArray(data.words)) {
+                                saveAllData(data);
+                                renderWordList();
+                                showNotification('数据导入成功！📤');
+                            } else {
+                                alert('文件格式不正确！');
+                            }
+                        } catch (error) {
+                            alert('导入失败：' + error.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #4caf50;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-size: 14px;
+                z-index: 2001;
+                box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+                animation: slideDown 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 2000);
+        }
+
+        function switchScreen(screenName) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(screenName + 'Screen').classList.add('active');
+            event.target.closest('.nav-item')?.classList.add('active');
+
+            if (screenName === 'home') {
+                updateHomeDisplay();
+            } else if (screenName === 'library') {
+                renderWordList();
+                document.getElementById('searchInput').value = '';
+            } else if (screenName === 'achievement') {
+                renderAchievements();
+            }
+        }
+
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && document.getElementById('searchInput').contains(document.activeElement)) {
+                performSearch();
+            } else if (e.key === 'Enter' && document.getElementById('practiceScreen').classList.contains('active')) {
+                checkAnswer();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeData();
+            renderWordList();
+            updateHomeDisplay();
+            renderAchievements();
+            console.log('✅ Word Hero 完整版初始化完成！所有词库功能已启用！');
+        });
+    </script>
+</body>
+</html>
